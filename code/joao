@@ -1,0 +1,106 @@
+---
+title: "Projeto_CD"
+author: "JoaoGaia"
+date: "28/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Download pacotes:
+```{r message=F, warning=F}
+install.packages("magrittr")
+install.packages("tidyverse")
+install.packages("readxl")
+install.packages("kableExtra")
+install.packages("summarytools")
+
+```
+
+#### Importando pacotes:
+```{r message=F, warning=F}
+library(magrittr)
+library(tidyverse)
+library(readxl)
+library(kableExtra)
+library(summarytools)
+
+```
+
+#### Importando dados:
+```{r message=F, warning=F}
+games <- read_csv("games.csv")
+games_details <- read_csv("games_details.csv")
+players <- read_csv("players.csv")
+ranking <- read_csv("ranking.csv")
+teams <- read_csv("teams.csv")
+```
+
+#### Verificando tabelas:
+```{r message=F, warning=F}
+head(games)
+head(games_details)
+head(players)
+head(ranking)
+head(teams)
+```
+#### Junções:
+```{r message=F, warning=F}
+base<-inner_join(ranking,teams,by="TEAM_ID")
+
+base2<-inner_join(games_details,games,by="GAME_ID")
+
+```
+
+#### Maiores - TIMES por temporada:
+```{r message=F, warning=F}
+MaioresVit<-base %>%
+  select(CONFERENCE,TEAM,SEASON_ID,G,W_PCT,)%>%
+  group_by(CONFERENCE,SEASON_ID,TEAM,G,W_PCT)%>%
+  filter(G==72)
+
+```
+
+
+#### Maiores - JOGADORES por temporada:
+```{r message=F, warning=F}
+MaioresJog<-base2 %>%
+  filter(SEASON>2003)%>%
+  select(GAME_ID,TEAM_ID,PLAYER_NAME,PLAYER_ID,SEASON,PTS)%>%
+  group_by(SEASON,TEAM_ID,PLAYER_NAME)%>%
+  summarise(Pontos=sum(PTS,na.rm=TRUE),
+            Partidas=(GAME_ID=n()),
+            MedPts=round(((Pontos/Partidas)),0))%>%
+  arrange(desc(MedPts))
+```
+
+
+
+################## Elaboração do Mapa:
+library(sf)           #Para lidar com dados espaciais 
+library(dplyr)        #Para manipulação de dados 
+library(readxl)       #Para leitura de arquivos do excel
+library(ggplot2)      #Para visualização de dados
+library(RColorBrewer) #Para acessar paleta de cores
+library(ggspatial)    #Para adicionar elementos de mapas
+
+mapa <- read_sf("estados_USAt.shp",options="ENCODING=WINDOWS-1252")
+
+
+est_tit <- read_delim("est_tit.csv", ";")
+
+mapaClass <-left_join(mapa,est_tit)
+
+mapaClass$Titulo[is.na(mapaClass$Titulo)] <- 0
+
+ggplot(mapaClass)+ #Inserindo os dados 
+  geom_sf(aes(fill=Titulo))+ #Criando um mapa para mostrar o número de habitantes para cada setor censitário [V002]
+  scale_fill_gradientn(colours = brewer.pal(9,'YlGn'),na.value = "grey50")+ #Definindo uma nova paleta de cores
+  geom_sf_label(aes(label=STUSPS),)+
+  labs(x="Longitude",y="Latitude",fill="Quantidade de Títulos")+ #Definindo o título da escala de cores
+  theme_minimal()+ #Definindo o tema do mapa
+  annotation_north_arrow(style = north_arrow_fancy_orienteering)+
+  annotation_scale(location="br")+
+  theme_bw()

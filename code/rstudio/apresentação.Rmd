@@ -1,0 +1,1104 @@
+---
+title: "Apresentação"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Análise dos dados da Liga Nacional de Basquete Americano
+
+Source: https://www.nba.com/stats/
+
+Glossary: https://www.nba.com/stats/help/glossary/
+
+## Instalação de pacotes
+
+
+```{r, results = FALSE, message=FALSE}
+#install.packages("magrittr")
+#install.packages("tidyverse")
+#install.packages("readxl")
+#install.packages("kableExtra")
+#install.packages("summarytools")
+#install.packages("knitr")
+#install.packages("sf")
+#install.packages("ggplot2")
+#install.packages("RColorBrewer")
+#install.packages("ggspatial")
+#install.packages("ggcorrplot")
+#install.packages("Hmisc")
+```
+
+
+## Import das bibliotecas
+```{r, results = FALSE, message=FALSE}
+library(sf)           #Para lidar com dados espaciais 
+library(dplyr)        #Para manipulação de dados 
+library(ggplot2)      #Para visualização de dados
+library(RColorBrewer) #Para acessar paleta de cores
+library(ggspatial)    #Para adicionar elementos de mapas
+library(knitr)
+library(magrittr)
+library(tidyverse)
+library(readxl)
+library(kableExtra)
+library(summarytools)
+library(ggcorrplot) #montar gráficos da matriz de correlação\
+library(Hmisc) #montar matriz de correlação
+library(car)
+```
+
+
+## Importar os dados
+
+- Games: Informações jogo a jogo de cada temporada com todas as características gerais da partida.
+- Games Details: Tabela de informações mais detalhadas de cada jogo, demonstrando estatisticas jogador a jogador.
+- Players: Tabela com informações de jogadores por time de cada temporada.
+- Ranking: Acompanhamento do ranking semana a semana ao longo das temporadas.
+- Teams: Tabela geral de informações de time a time. 
+- Usa States: Mapa dos Estados Unidos
+- NBA Titles: Títulos dos Times
+
+
+```{r, results = FALSE, message=FALSE, warning=FALSE}
+games <- read_csv("dataset/games.csv")
+games_details <- read_csv("dataset/games_details.csv")
+players <- read_csv("dataset/players.csv")
+ranking <- read_csv("dataset/ranking.csv")
+teams <- read_csv("dataset/teams.csv")
+usa_states <- "dataset/estados_USAt.shp"
+nba_titles <- "dataset/est_tit.csv"
+
+```
+
+
+## Glossário
+
+### Tabela - Games: 
+
+- GAME_DATE_EST: Game's date
+- GAME_ID: ID of the game
+- GAME_STATUS_TEXT: Status final means that the  game is completed
+- HOME_TEAM_ID: ID of the home team
+- VISITOR_TEAM_ID: ID of the visitor team
+- SEASON: Season when the game occured
+- TEAM_ID_home: ID of the home team (dupplicate of HOME_TEAM_ID)
+- PTS_home: Number of points scored by home team
+- FG_PCT_home: Field Goal Percentage home team
+- FT_PCT_home: Free Throw Percentage of the home team
+- FG3_PCT_home: Three Point Percentageof the home team
+- AST_home: Assists of the home team
+- REB_home: Rebounds of the home team
+- TEAM_ID_away: ID of the away team (dupplicate of VISITOR_TEAM_ID)
+- PTS_away: Number of points scored by away team
+- FG_PCT_away: Field Goal Percentage away team
+- FT_PCT_away: Free Throw Percentage of the away team
+- FG3_PCT_away: Three Point Percentage of the away team
+- AST_away: Assists of the away team
+- REB_away: Rebounds of the away team
+- HOME_TEAM_WINS: If home team won the game
+
+### Tabela - Games_details
+
+- GAME_ID: ID of the game
+- TEAM_ID: ID of the team
+- TEAM_ABBREVIATION: Team's abbreviation
+- TEAM_CITY: City where the game was played
+- PLAYER_ID: ID of the player
+- PLAYER_NAME: Player's name
+- START_POSITION: Position of the player (if nothing then he's on the bench)
+- COMMENT: Comment
+- MIN: Minutes played
+- FGM: Field Goals Made
+- FGA: Field Goals Attempted
+- FG_PCT: Field Goal Percentage
+- FG3M: Three Pointers Made
+- FG3A: Three Pointers Attempted
+- FG3_PCT: Three Point Percentage
+- FTM: Free Throws Made
+- FTA: Free Throws Attempted
+- FT_PCT: Free Throw Percentage
+- OREB: Offensive Rebounds
+- DREB: Defensive Rebounds
+- REB: Rebounds
+- AST: Assists
+- STL: Steals
+- BLK: Blocked shots
+- TO: Turnovers
+- PF: Personnal Foul
+- PTS: Number of points scored by the player
+- PLUS_MINUS: Plus - Minus
+
+### Tabela - players
+
+- PLAYER_NAME: Player's name
+- TEAM_ID: ID of the team
+- PLAYER_ID: ID of the player
+- SEASON: Season
+
+### Tabela - ranking
+
+- TEAM_ID: ID of the team
+- LEAGUE_ID: ID of the league (here only NBA)
+- SEASON_ID: Season
+- STANDINGSDATE: Standings date
+- CONFERENCE: Conference (west or east)
+- TEAM: Team name
+- G: Number of games played on the season
+- W: Number of winning games on the season
+- L: Number of loosing games on the season
+- W_PCT: Win %
+- HOME_RECORD: Home record on the season
+- ROAD_RECORD: Road record on the season
+- RETURNTOPLAY(empty column)
+
+### Tabela - teams
+
+- LEAGUE_ID: ID of the league (here only NBA)
+- TEAM_ID: ID of the team
+- MIN_YEAR: Minimum year of the team into NBA championship
+- MAX_YEAR: Maximum year of the team into NBA championship
+- ABBREVIATION: Abbreviation of team name
+- NICKNAME: Team's nickname
+- YEARFOUNDED: Founded Year
+- CITY: Team's city
+- ARENA: Team's stadium
+- ARENACAPACITY: Capacity of the stadium
+- OWNER: Owner of the team (last one)
+- GENERALMANAGER: General manager
+- HEADCOACH: Head coach
+- DLEAGUEAFFILIATION: League Affiliation
+
+
+## Verificando tabelas
+
+```{r, }
+glimpse(games)
+head(games)
+
+glimpse(games_details)
+head(games_details)
+
+glimpse(players)
+head(players)
+
+glimpse(ranking)
+head(ranking)
+
+glimpse(teams)
+head(teams)
+
+```
+
+## Os times com os melhores aproveitamentos
+
+```{r }
+ranking_total <- ranking %>%
+    group_by(TEAM_ID) %>%
+    summarise(per_W=(sum(W)/sum(G)) * 100) %>%
+    inner_join(teams, by = "TEAM_ID") %>%
+    select(NICKNAME, per_W) %>%
+    arrange(desc(per_W)) 
+
+
+ranking_total_top_10 <- ranking_total %>%
+  slice_head(n=10)
+  
+
+knitr::kable(ranking_total_top_10, col.names = c("Times", "Aproveitamento (% de vitórias)"), digits = 2, format.args = list(decimal=","))
+
+
+ranking_total_top_10 %>%
+ mutate(NICKNAME=fct_reorder(NICKNAME, per_W)) %>%
+ ggplot(aes(x=NICKNAME, y=per_W)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(per_W, nsmall=2, decimal=",")), color="black") +
+    coord_flip() +
+    ggtitle("Ranking") +
+    xlab("Times") +
+    ylab("Aproveitamento (% de vitórias)") +
+    theme_bw()
+
+```
+
+### Gráfico temporal
+
+```{r }
+ranking$SEASON_ID = as.character(ranking$SEASON_ID)
+
+season <- ranking %>%
+    mutate(SEASON_ID=substr(SEASON_ID, 2,5)) %>%
+    filter(G != 0) %>%
+    inner_join(teams, by = "TEAM_ID") %>%
+    group_by(NICKNAME, SEASON_ID, CONFERENCE) %>%
+    summarise(per_W=(sum(W)/sum(G)) * 100) %>%
+    arrange(SEASON_ID)
+
+season %>%
+    filter(NICKNAME == "Spurs" | NICKNAME =="Lakers", SEASON_ID > 2003 ) %>%
+    ggplot(aes(x = SEASON_ID, y = per_W, group = NICKNAME)) +
+    geom_line(aes(color = NICKNAME)) +
+    ggtitle("Ranking por temporada") +
+    xlab("Temporada") +
+    ylab("Aproveitamento (% de vitórias)")
+```
+
+## Tabela resumo - Ranking
+
+```{r }
+summary(ranking['G'])
+summary(ranking['W'])  
+summary(ranking['W_PCT'])
+summary(ranking['L'])
+
+G <-ranking %>%
+      summarise(media = mean(G, na.rm = TRUE), 
+        dp = round( sd(G, na.rm = TRUE), 2), min = min(G, na.rm = TRUE), 
+        max = max(G, na.rm = TRUE), 
+        mediana = median(G, na.rm = TRUE),Q1=quantile(G, probs = 0.25),
+                Q2=quantile(G, probs = 0.50),
+                Q3=quantile(G, probs = 0.75))
+
+W <-ranking %>%
+      summarise(media = mean(W, na.rm = TRUE), 
+        dp = round( sd(W, na.rm = TRUE), 2), min = min(W, na.rm = TRUE), 
+        max = max(W, na.rm = TRUE), 
+        mediana = median(W, na.rm = TRUE),Q1=quantile(W, probs = 0.25),
+                Q2=quantile(W, probs = 0.50),
+                Q3=quantile(W, probs = 0.75))
+
+L <-ranking %>%
+      summarise(media = mean(L, na.rm = TRUE), 
+        dp = round( sd(L, na.rm = TRUE), 2), min = min(L, na.rm = TRUE), 
+        max = max(L, na.rm = TRUE), 
+        mediana = median(L, na.rm = TRUE),Q1=quantile(L, probs = 0.25),
+                Q2=quantile(L, probs = 0.50),
+                Q3=quantile(L, probs = 0.75))
+
+G
+W
+L
+
+```
+
+
+## Maiores pontuadores
+
+```{r }
+base2<-inner_join(games_details,games,by="GAME_ID")
+
+MaioresJog<-base2 %>%
+  filter(SEASON>2003)%>%
+  select(GAME_ID,TEAM_ID,PLAYER_NAME,PLAYER_ID,SEASON,PTS)%>%
+  group_by(PLAYER_NAME)%>%
+  summarise(Pontos=sum(PTS,na.rm=TRUE),
+            Partidas=(GAME_ID=n()),
+            MedPts=round(((Pontos/Partidas)),0))%>%
+              arrange(desc(Pontos))
+
+head(MaioresJog)
+
+head(MaioresJog,5) %>%
+mutate(PLAYER_NAME=fct_reorder(PLAYER_NAME, Pontos)) %>%
+    ggplot(aes(x=PLAYER_NAME, y=Pontos)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(Pontos)),  color="black") +
+    coord_flip() +
+    ggtitle("Maiores pontuadores") +
+    xlab("Jogadores") +
+    ylab("Pontuação") +
+    theme_bw()
+
+```
+
+## Melhores aproveitamentos por conferência
+
+```{r, message=FALSE}
+
+base<-inner_join(ranking,teams,by="TEAM_ID")
+
+MaioresVitWest<-base %>%
+  select(CONFERENCE,TEAM,SEASON_ID,G,W_PCT,)%>%
+    filter(G==82)%>%
+    filter(CONFERENCE=="West") %>%
+      group_by(CONFERENCE,TEAM,SEASON_ID,G,W_PCT)%>%
+        summarise(max = max(W_PCT)) %>%
+            arrange(desc(max))
+          
+head(MaioresVitWest) 
+
+
+
+MaioresVitEast<-base %>%
+  select(CONFERENCE,TEAM,SEASON_ID,G,W_PCT,)%>%
+    filter(G==82)%>%
+    filter(CONFERENCE=="East") %>%
+      group_by(CONFERENCE,TEAM,SEASON_ID,G,W_PCT)%>%
+        summarise(max = max(W_PCT)) %>%
+            arrange(desc(max))
+          
+head(MaioresVitEast)
+
+```
+
+## Títulos por estado
+
+```{r }
+mapa <- read_sf(usa_states,options="ENCODING=WINDOWS-1252")
+
+
+est_tit <- read_delim(nba_titles, ";")
+
+mapaClass <-left_join(mapa,est_tit)
+
+mapaClass$Titulo[is.na(mapaClass$Titulo)] <- 0
+
+ggplot(mapaClass)+ #Inserindo os dados 
+  geom_sf(aes(fill=Titulo), size = 0.05)+ #Criando um mapa para mostrar o número de habitantes para cada setor censitário [V002]
+  scale_fill_gradientn(colours = brewer.pal(9,'YlGn'),na.value = "grey50")+ #Definindo uma nova paleta de cores
+  geom_sf_label(aes(label=STUSPS),)+
+  labs(x="Longitude",y="Latitude",fill="Quantidade de Títulos")+ #Definindo o título da escala de cores
+  theme_minimal()+ #Definindo o tema do mapa
+  annotation_north_arrow(style = north_arrow_fancy_orienteering)+
+  annotation_scale(location="br")+
+  theme_bw()
+
+```
+
+## Análise - Los Angeles Lakers
+
+```{r }
+G <-ranking %>%
+  group_by(TEAM_ID) %>% 
+    filter(TEAM_ID==1610612747) %>%
+      summarise(media = mean(G, na.rm = TRUE), 
+        dp = round( sd(G, na.rm = TRUE), 2), min = min(G, na.rm = TRUE), 
+        max = max(G, na.rm = TRUE), 
+        mediana = median(G, na.rm = TRUE),Q1=quantile(G, probs = 0.25),
+                Q2=quantile(G, probs = 0.50),
+                Q3=quantile(G, probs = 0.75))
+
+W <-ranking %>%
+  group_by(TEAM_ID) %>% 
+    filter(TEAM_ID==1610612747) %>%
+      summarise(media = mean(W, na.rm = TRUE), 
+        dp = round( sd(W, na.rm = TRUE), 2), min = min(W, na.rm = TRUE), 
+        max = max(W, na.rm = TRUE), 
+        mediana = median(W, na.rm = TRUE),Q1=quantile(W, probs = 0.25),
+                Q2=quantile(W, probs = 0.50),
+                Q3=quantile(W, probs = 0.75))
+
+L <-ranking %>%
+  group_by(TEAM_ID) %>% 
+    filter(TEAM_ID==1610612747) %>%
+      summarise(media = mean(L, na.rm = TRUE), 
+        dp = round( sd(L, na.rm = TRUE), 2), min = min(L, na.rm = TRUE), 
+        max = max(L, na.rm = TRUE), 
+        mediana = median(L, na.rm = TRUE), Q1=quantile(L, probs = 0.25),
+                Q2=quantile(L, probs = 0.50),
+                Q3=quantile(L, probs = 0.75))
+
+G
+W
+L
+
+boxplot(ranking$G,ranking$W,ranking$L)
+```
+
+### Lakers -  Mandante
+
+```{r }
+lakers_home <-games %>%
+  group_by(HOME_TEAM_ID) %>% 
+    filter(HOME_TEAM_ID==1610612747) %>%
+      summarise(media_vitorias = mean(HOME_TEAM_WINS, na.rm = TRUE), 
+        dp = round( sd(HOME_TEAM_WINS, na.rm = TRUE), 2),
+               media_pts_lakers = mean(PTS_home, na.rm = TRUE), 
+        dp_pts = round( sd(PTS_home, na.rm = TRUE), 2),
+               media_pts_visitante = mean(PTS_away, na.rm = TRUE), 
+        dp_pts_vis = round( sd(PTS_away, na.rm = TRUE), 2))
+lakers_home
+
+```
+
+### Lakers - Visitante
+
+```{r }
+lakers_away <-games %>%
+  group_by(VISITOR_TEAM_ID) %>% 
+    filter(VISITOR_TEAM_ID==1610612747) %>%
+      summarise(media_vitorias_mandante = 1-mean(HOME_TEAM_WINS, na.rm = TRUE), 
+        dp = round( sd(HOME_TEAM_WINS, na.rm = TRUE), 2),
+               media_pts_lakers = mean(PTS_away, na.rm = TRUE), 
+        dp_pts_lakers = round( sd(PTS_home, na.rm = TRUE), 2),
+               media_pts_mandante = mean(PTS_home, na.rm = TRUE), 
+        dp_pts_mandante = round( sd(PTS_away, na.rm = TRUE), 2))
+lakers_away
+```
+
+### Times mais derrotados pelos lakers em Los Angeles
+
+```{r }
+lakers_home <-games %>%
+  group_by(HOME_TEAM_ID) %>% 
+    select(HOME_TEAM_ID, TEAM_ID = VISITOR_TEAM_ID, HOME_TEAM_WINS) %>%
+        filter(HOME_TEAM_ID==1610612747)
+        
+
+lakers_home_join <- inner_join(lakers_home, teams, by="TEAM_ID")
+derrotas <- lakers_home_join %>% 
+                group_by(NICKNAME) %>% 
+                    summarise(Derrotas = sum(HOME_TEAM_WINS)) %>%
+                        arrange(desc(Derrotas)) %>% slice(1:10)
+
+
+derrotas %>%
+    mutate(NICKNAME=fct_reorder(NICKNAME, Derrotas)) %>%
+    ggplot(aes(x=NICKNAME, y=Derrotas)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(Derrotas)),  color="black") +
+    coord_flip() +
+    ggtitle("Times mais derrotados pelos Lakers em LA") +
+    xlab("Times") +
+    ylab("Número de derrotas") +
+    theme_bw()
+
+```
+
+### Times que mais derrotaram os Lakers em LA
+
+```{r }
+lakers_home <-games %>%
+  group_by(HOME_TEAM_ID) %>% 
+    select(HOME_TEAM_ID, TEAM_ID = VISITOR_TEAM_ID, HOME_TEAM_WINS) %>%
+        filter(HOME_TEAM_ID==1610612747)
+        
+
+lakers_home_join <- inner_join(lakers_home, teams, by="TEAM_ID")
+derrotas <- lakers_home_join %>% 
+                filter(HOME_TEAM_WINS==0) %>%
+                    mutate(AWAY_TEAM_WINS = 1) %>%
+                       select(HOME_TEAM_ID, NICKNAME, AWAY_TEAM_WINS) %>%
+                        group_by(NICKNAME) %>%
+                         summarise(Derrotas = sum(AWAY_TEAM_WINS)) %>%
+                            arrange(desc(Derrotas)) %>% slice(1:10)
+
+derrotas %>%
+    mutate(NICKNAME=fct_reorder(NICKNAME, Derrotas)) %>%
+    ggplot(aes(x=NICKNAME, y=Derrotas)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(Derrotas)),  color="black") +
+    coord_flip() +
+    ggtitle("Times que mais derrotaram os Lakers em LA") +
+    xlab("Times") +
+    ylab("Número de vitórias") +
+    theme_bw()
+
+```
+
+### Jogadores que mais vezes compuseram o elenco dos Lakers
+
+```{r }
+lakers_players <-players %>%
+                    filter(TEAM_ID==1610612747) %>%
+                        mutate(APARICAO = 1) %>%
+                            group_by(PLAYER_NAME) %>%
+                                summarise(APARICOES = sum(APARICAO)) %>%
+                                    arrange(desc(APARICOES)) %>% slice(1:5)
+lakers_players %>%
+mutate(PLAYER_NAME=fct_reorder(PLAYER_NAME, APARICOES)) %>%
+    ggplot(aes(x=PLAYER_NAME, y=APARICOES)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(APARICOES)),  color="black") +
+    coord_flip() +
+    ggtitle("Jogadores que mais vezes compuseram o elenco dos Lakers") +
+    xlab("Jogadores") +
+    ylab("Aparições") +
+    theme_bw()
+```
+
+## Análise do Jogador LeBron James
+
+```{r }
+lebron_df <-games_details %>%
+                inner_join(games,by="GAME_ID") %>%
+                filter(SEASON>2003)%>%
+                    filter(PLAYER_ID==2544) %>%
+                        mutate(APARICAO = 1) %>%
+                            group_by(PLAYER_NAME, TEAM_CITY) %>%
+                                summarise(APARICOES = sum(APARICAO)) %>%
+                                    arrange(desc(APARICOES)) 
+lebron_df %>%
+mutate(TEAM_CITY=fct_reorder(TEAM_CITY, APARICOES)) %>%
+    ggplot(aes(x=TEAM_CITY, y=APARICOES)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(APARICOES)),  color="black") +
+    coord_flip() +
+    ggtitle("Times em que LeBron mais jogou") +
+    xlab("Times") +
+    ylab("Número de jogos") +
+    theme_bw()
+
+lebron_df <-games_details %>%
+              inner_join(games,by="GAME_ID") %>%
+                mutate(APARICOES = 1) %>%
+                filter(SEASON>2003)%>%
+                    filter(PLAYER_ID==2544) %>%
+                            group_by(PLAYER_NAME) %>%
+                                summarise(GAMES = sum(APARICOES),PTS_MADE = sum(PTS, na.rm = TRUE), 
+                                          MAX_PTS = max(PTS, na.rm = TRUE), 
+                                          MIN_PTS=min(PTS, na.rm = TRUE),
+                                             MEAN_PTS=round(mean(PTS, na.rm = TRUE),2),
+                                                FG_PCT = sum(FGM, na.rm = TRUE)/sum(FGA, na.rm = TRUE),
+                                                 FG3_PCT = sum(FG3M, na.rm = TRUE)/sum(FG3A, na.rm = TRUE)) %>%
+                                    arrange(desc(PTS_MADE))
+lebron_df
+```
+
+
+# Trabalho Final
+
+## Jogo em casa influêcia?
+
+```{r }
+games %>%
+    select(PTS_home, PTS_away) %>%
+    mutate(home_win = factor(if_else(PTS_home > PTS_away, "Sede", "Visitante"))) %>%
+    summarytools::freq()
+
+Table <- matrix(c(59.22,40.78,40.78,59.22), 2, 2, byrow = TRUE)
+dimnames(Table) <- list(rows = c("Ganhou", "Perdeu"), columns = c("Casa", "Fora"))
+Table
+
+Test <- chisq.test(Table)
+Test
+Test$expected
+
+```
+
+H0 = Valores independentes
+
+H1 = Valores dependentes
+
+p-valor < 0,05 rejeita-se hipótese nula, ou seja, Jogar em casa influencia na vitória
+
+### Comparação das demais estatísticas
+
+```{r}
+stats_chart <- games %>%
+                select(HOME_TEAM_WINS, PTS_home, FG_PCT_home, FT_PCT_home, FG3_PCT_home, AST_home, REB_home,
+                       PTS_away, FG_PCT_away, FT_PCT_away, FG3_PCT_away, AST_away, REB_away) %>%
+                mutate(PTS_WIN = if_else(HOME_TEAM_WINS == 1, PTS_home, PTS_away)) %>%
+                mutate(PTS_LOSE = if_else(HOME_TEAM_WINS == 0, PTS_home, PTS_away)) %>%
+                mutate(FG_PCT_WIN = if_else(HOME_TEAM_WINS == 1, FG_PCT_home, FG_PCT_away)) %>%
+                mutate(FG_PCT_LOSE = if_else(HOME_TEAM_WINS == 0, FG_PCT_home, FG_PCT_away)) %>%
+                mutate(FT_PCT_WIN = if_else(HOME_TEAM_WINS == 1, FT_PCT_home, FT_PCT_away)) %>%
+                mutate(FT_PCT_LOSE = if_else(HOME_TEAM_WINS == 0, FT_PCT_home, FT_PCT_away)) %>%
+                mutate(FG3_PCT_WIN = if_else(HOME_TEAM_WINS == 1, FG3_PCT_home, FG3_PCT_away)) %>%
+                mutate(FG3_PCT_LOSE = if_else(HOME_TEAM_WINS == 0, FG3_PCT_home, FG3_PCT_away)) %>%
+                mutate(AST_WIN = if_else(HOME_TEAM_WINS == 1, AST_home, AST_away)) %>%
+                mutate(AST_LOSE = if_else(HOME_TEAM_WINS == 0, AST_home, AST_away)) %>%
+                mutate(REB_WIN = if_else(HOME_TEAM_WINS == 1, REB_home, REB_away)) %>%
+                mutate(REB_LOSE = if_else(HOME_TEAM_WINS == 0, REB_home, REB_away)) %>%
+                select(HOME_TEAM_WINS, PTS_WIN,PTS_LOSE,FG_PCT_WIN,FG_PCT_LOSE,FT_PCT_WIN,FT_PCT_LOSE,FG3_PCT_WIN,
+                      FG3_PCT_LOSE,AST_WIN,AST_LOSE,REB_WIN,REB_LOSE)
+                
+
+chart_reb_win <- stats_chart %>% select(Count = REB_WIN) %>% filter(Count!='NA') %>% mutate(Label = 'REB_WIN')
+chart_reb_lose <- stats_chart %>% select(Count = REB_LOSE) %>% filter(Count!='NA') %>% mutate(Label = 'REB_LOSE')
+reb_chart <- rbind(chart_reb_win, chart_reb_lose)
+
+#reb_chart
+
+count_chart <- reb_chart %>% 
+                group_by(Label) %>% 
+                  summarise(count = sum(Count))
+count_chart %>%
+ggplot(aes(x=Label, y=count)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(count)),  color="black") +
+    ggtitle("Comparação de Rebotes entre Vencedores e Perdedores") +
+    xlab("Status") +
+    ylab("Número de rebotes") +
+    theme_bw()
+options(repr.plot.width = 6, repr.plot.height = 4)
+ggplot(reb_chart, aes(x=Count, color=Label)) +
+geom_histogram(fill="white", bins=30) + theme(legend.position="top")
+
+boxplot(chart_reb_lose$Count,chart_reb_win$Count,names=c("REB_LOSE","REB_WIN"))
+```
+
+
+```{r}
+chart_pts_win <- stats_chart %>% select(Count = PTS_WIN) %>% filter(Count!='NA') %>% mutate(Label = 'PTS_WIN')
+chart_pts_lose <- stats_chart %>% select(Count = PTS_LOSE) %>% filter(Count!='NA') %>% mutate(Label = 'PTS_LOSE')
+
+pts_chart <- rbind(chart_pts_win, chart_pts_lose)
+#reb_chart
+
+count_chart <- pts_chart %>% group_by(Label) %>% summarise(count = sum(Count))
+count_chart %>%
+ggplot(aes(x=Label, y=count)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(count)),  color="black") +
+    ggtitle("Comparação de Pontos entre Vencedores e Perdedores") +
+    xlab("Status") +
+    ylab("Número de pontos") +
+    theme_bw()
+
+options(repr.plot.width = 6, repr.plot.height = 4)
+ggplot(pts_chart, aes(x=Count, color=Label)) +
+geom_histogram(fill="white", bins=50) + theme(legend.position="top")
+
+boxplot(chart_pts_lose$Count, chart_pts_win$Count,names=c("pts_lose","pts_win"))
+```
+
+
+```{r}
+chart_pts_win <- stats_chart %>% select(Count = FG3_PCT_WIN) %>% filter(Count!='NA') %>% mutate(Label = 'FG3_PCT_WIN')
+chart_pts_lose <- stats_chart %>% select(Count = FG3_PCT_LOSE) %>% filter(Count!='NA') %>% mutate(Label = 'FG3_PCT_LOSE')
+
+pts_chart <- rbind(chart_pts_win, chart_pts_lose)
+#reb_chart
+
+count_chart <- pts_chart %>% group_by(Label) %>% summarise(count = sum(Count))
+count_chart %>%
+ggplot(aes(x=Label, y=count)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(count)),  color="black") +
+    ggtitle("Comparação entre Aproveitamento de Bolas de 3") +
+    xlab("Status") +
+    ylab("Aproveitamento") +
+    theme_bw()
+
+options(repr.plot.width = 6, repr.plot.height = 4)
+ggplot(pts_chart, aes(x=Count, color=Label)) +
+geom_histogram(fill="white", bins=50) + theme(legend.position="top")
+
+boxplot(chart_pts_lose$Count, chart_pts_win$Count,names=c("FG3_PCT_LOSE","FG3_PCT_WIN"))
+```
+
+
+
+```{r}
+chart_pts_win <- stats_chart %>% select(Count = AST_WIN) %>% filter(Count!='NA') %>% mutate(Label = 'AST_WIN')
+chart_pts_lose <- stats_chart %>% select(Count = AST_LOSE) %>% filter(Count!='NA') %>% mutate(Label = 'AST_LOSE')
+
+pts_chart <- rbind(chart_pts_win, chart_pts_lose)
+#reb_chart
+
+count_chart <- pts_chart %>% group_by(Label) %>% summarise(count = sum(Count))
+count_chart %>%
+ggplot(aes(x=Label, y=count)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(count)),  color="black") +
+    ggtitle("Comparação entre assistências de vencedores e perdedores") +
+    xlab("Status") +
+    ylab("Soma de assistências") +
+    theme_bw()
+
+options(repr.plot.width = 6, repr.plot.height = 4)
+ggplot(pts_chart, aes(x=Count, color=Label)) +
+geom_histogram(fill="white", bins=50) + theme(legend.position="top")
+
+boxplot(chart_pts_lose$Count, chart_pts_win$Count,names=c("AST_LOSE","AST_WIN"))
+```
+
+```{r}
+chart_pts_win <- stats_chart %>% select(Count = FG3_PCT_WIN) %>% filter(Count!='NA') %>% mutate(Label = 'FG3_PCT_WIN')
+chart_pts_lose <- stats_chart %>% select(Count = FG3_PCT_LOSE) %>% filter(Count!='NA') %>% mutate(Label = 'FG3_PCT_LOSE')
+
+pts_chart <- rbind(chart_pts_win, chart_pts_lose)
+#reb_chart
+
+count_chart <- pts_chart %>% group_by(Label) %>% summarise(count = sum(Count))
+count_chart %>%
+ggplot(aes(x=Label, y=count)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(count)),  color="black") +
+    ggtitle("Comparação entre Aproveitamento de Bolas de 3") +
+    xlab("Status") +
+    ylab("Aproveitamento") +
+    theme_bw()
+
+options(repr.plot.width = 6, repr.plot.height = 4)
+ggplot(pts_chart, aes(x=Count, color=Label)) +
+geom_histogram(fill="white", bins=50) + theme(legend.position="top")
+
+boxplot(chart_pts_lose$Count, chart_pts_win$Count,names=c("FG3_PCT_LOSE","FG3_PCT_WIN"))
+```
+
+
+```{r}
+chart_pts_win <- stats_chart %>% select(Count = FT_PCT_WIN) %>% filter(Count!='NA') %>% mutate(Label = 'FT_PCT_WIN')
+chart_pts_lose <- stats_chart %>% select(Count = FT_PCT_LOSE) %>% filter(Count!='NA') %>% mutate(Label = 'FT_PCT_LOSE')
+
+pts_chart <- rbind(chart_pts_win, chart_pts_lose)
+#reb_chart
+
+count_chart <- pts_chart %>% group_by(Label) %>% summarise(count = sum(Count))
+count_chart %>%
+ggplot(aes(x=Label, y=count)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(count)),  color="black") +
+    ggtitle("Comparação entre Aproveitamento de Lances Livres") +
+    xlab("Status") +
+    ylab("Aproveitamento") +
+    theme_bw()
+
+options(repr.plot.width = 6, repr.plot.height = 4)
+ggplot(pts_chart, aes(x=Count, color=Label)) +
+geom_histogram(fill="white", bins=50) + theme(legend.position="top")
+
+boxplot(chart_pts_lose$Count, chart_pts_win$Count,names=c("FT_PCT_LOSE","FT_PCT_WIN"))
+```
+
+
+```{r}
+chart_pts_win <- stats_chart %>% select(Count = FG_PCT_WIN) %>% filter(Count!='NA') %>% mutate(Label = 'FG_PCT_WIN')
+chart_pts_lose <- stats_chart %>% select(Count = FG_PCT_LOSE) %>% filter(Count!='NA') %>% mutate(Label = 'FG_PCT_LOSE')
+
+pts_chart <- rbind(chart_pts_win, chart_pts_lose)
+#reb_chart
+
+count_chart <- pts_chart %>% group_by(Label) %>% summarise(count = sum(Count))
+count_chart %>%
+ggplot(aes(x=Label, y=count)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(count)),  color="black") +
+    ggtitle("Comparação entre Aproveitamento de bolas de 2") +
+    xlab("Status") +
+    ylab("Aproveitamento") +
+    theme_bw()
+
+options(repr.plot.width = 6, repr.plot.height = 4)
+ggplot(pts_chart, aes(x=Count, color=Label)) +
+geom_histogram(fill="white", bins=50) + theme(legend.position="top")
+
+boxplot(chart_pts_lose$Count, chart_pts_win$Count,names=c("FG_PCT_LOSE","FG_PCT_WIN"))
+```
+
+### Análise da influência da conferência para vitória
+
+```{r}
+ranking_conf <- ranking %>%
+                    select(HOME_TEAM_ID=TEAM_ID, CONFERENCE)
+
+ranking_conf = unique(ranking_conf)
+#ranking_conf
+
+dados<- inner_join(games, ranking_conf, by="HOME_TEAM_ID") %>%
+            filter(!is.na(CONFERENCE)) %>%
+                select(HOME_TEAM_WINS, CONFERENCE) %>%
+                    group_by(CONFERENCE) %>%
+                        summarise(Vitorias = sum(HOME_TEAM_WINS))%>%
+                            mutate(freq_relativa = (Vitorias/ sum(Vitorias))*100 )
+dados
+
+```
+
+```{r}
+dados %>%
+ggplot(aes(x=CONFERENCE, y=Vitorias)) +
+    geom_bar(stat="identity", fill="orange") + 
+    geom_text(aes(label=format(Vitorias)),  color="black") +
+    ggtitle("Comparação entre Conferências") +
+    xlab("Conferência") +
+    ylab("Vitórias") +
+    theme_bw()
+
+```
+
+```{r}
+Table <- matrix(c(49.49,50.50,50.50,49.49), 2, 2, byrow = TRUE)
+dimnames(Table) <- list(rows = c("Ganhou", "Perdeu"), columns = c("East", "West"))
+Table
+
+Test <- chisq.test(Table)
+Test
+Test$expected # Expected
+
+#H0 = Valores independentes
+#H1 = Valores dependentes
+#Como p-valor > 0,05 então não rejeita-se hipótese nula e a conferencia ao qual o time pertence não influencia na vitória
+```
+
+### Análise de triplos duplos para vitória
+
+```{r}
+games_df <- games %>% 
+                select(GAME_ID, HOME_TEAM_ID, VISITOR_TEAM_ID, HOME_TEAM_WINS)
+#games_df
+
+dados<- inner_join(games_details, games_df, by="GAME_ID") %>%
+            mutate(IS_HOME = factor(if_else(TEAM_ID == HOME_TEAM_ID, 1, 0))) %>%
+              mutate(WIN = factor(if_else((HOME_TEAM_WINS == 1 & IS_HOME == 1)|(HOME_TEAM_WINS == 0 & IS_HOME == 0), 1, 0))) %>%
+                mutate(TR_Double = factor(if_else((PTS>9 & REB>9 & AST > 9), 'SIM', 'NAO')))
+
+dt_vitorias <- dados %>%
+                filter(WIN == 1)
+
+dt_derrotas <- dados %>%
+                filter(WIN == 0)
+```
+
+
+```{r}
+games_df <- games %>% 
+                select(GAME_ID, HOME_TEAM_ID, VISITOR_TEAM_ID, HOME_TEAM_WINS)
+#games_df
+
+dados<- inner_join(games_details, games_df, by="GAME_ID") %>%
+            mutate(IS_HOME = factor(if_else(TEAM_ID == HOME_TEAM_ID, 1, 0))) %>%
+              mutate(WIN = factor(if_else((HOME_TEAM_WINS == 1 & IS_HOME == 1)|(HOME_TEAM_WINS == 0 & IS_HOME == 0), 1, 0))) %>%
+                mutate(TR_Double = factor(if_else((PTS>9 & REB>9 & AST > 9), 'SIM', 'NAO')))
+
+dt_vitorias <- dados %>%
+                filter(WIN == 1)
+
+dt_derrotas <- dados %>%
+                filter(WIN == 0)
+
+vitoria_td <- dt_vitorias %>%
+            select(TR_Double) %>%
+                group_by(TR_Double) %>%
+                        summarise(TR_Double_ref = tabulate(TR_Double))
+
+
+derrota_td <- dt_derrotas %>%
+                select(TR_Double) %>%
+                    group_by(TR_Double) %>%
+                        summarise(TR_Double_ref = tabulate(TR_Double))
+vitoria_td
+derrota_td
+```
+
+```{r}
+Table <- matrix(c(821,252363,312,253105), 2, 2, byrow = TRUE)
+dimnames(Table) <- list(rows = c("Ganhou", "Perdeu"), columns = c("Fez TD", "Não fez TD"))
+Table
+
+Test <- chisq.test(Table)
+Test
+Test$expected # Expected
+
+#H0 = Valores independentes
+#H1 = Valores dependentes
+#Como p-valor > 0,05 então não rejeita-se hipótese nula 
+```
+
+
+## Correlações
+
+### Obter os jogos ganhos
+
+```{r}
+games_win <- games %>%
+    mutate(
+        TEAM_ID=if_else(HOME_TEAM_WINS == 1, TEAM_ID_home, TEAM_ID_away),
+        FG_PCT=if_else(HOME_TEAM_WINS == 1, FG_PCT_home, FG_PCT_away),
+        FT_PCT=if_else(HOME_TEAM_WINS == 1, FT_PCT_home, FT_PCT_away),
+        FG3_PCT=if_else(HOME_TEAM_WINS == 1, FG3_PCT_home, FG3_PCT_away),
+        AST=if_else(HOME_TEAM_WINS == 1, AST_home, AST_away),
+        REB=if_else(HOME_TEAM_WINS == 1, REB_home, REB_away),
+        HOME_WIN=factor(HOME_TEAM_WINS)
+        
+    ) %>%
+    select(GAME_ID, TEAM_ID, FG_PCT, FT_PCT, FG3_PCT, AST, REB, HOME_WIN) #%>%
+    #inner_join(games_details, by = c("GAME_ID" = "GAME_ID", "TEAM_ID" = "TEAM_ID"))
+
+games_lost <- games %>%
+    mutate(
+        TEAM_ID=if_else(HOME_TEAM_WINS == 0, TEAM_ID_home, TEAM_ID_away),
+        FG_PCT=if_else(HOME_TEAM_WINS == 0, FG_PCT_home, FG_PCT_away),
+        FT_PCT=if_else(HOME_TEAM_WINS == 0, FT_PCT_home, FT_PCT_away),
+        FG3_PCT=if_else(HOME_TEAM_WINS == 0, FG3_PCT_home, FG3_PCT_away),
+        AST=if_else(HOME_TEAM_WINS == 0, AST_home, AST_away),
+        REB=if_else(HOME_TEAM_WINS == 0, REB_home, REB_away),
+        HOME_WIN=factor(HOME_TEAM_WINS)
+        
+    ) %>%
+    select(GAME_ID, TEAM_ID, FG_PCT, FT_PCT, FG3_PCT, AST, REB, HOME_WIN)
+
+
+glimpse(games_win)
+glimpse(games_lost)
+
+summarytools::freq(games_win$HOME_WIN)
+summary(games_win)
+summary(games_lost)
+```
+
+Teste de normalidade da tabela de vitórias
+
+```{r}
+shapiro.test(sample(games_win$FG_PCT, 5000)) # normal
+car::qqPlot(games_win$FG_PCT) # normal
+shapiro.test(sample(games_win$FT_PCT, 5000)) # normal
+car::qqPlot(games_win$FT_PCT) # normal
+shapiro.test(sample(games_win$FG3_PCT, 5000)) # não normal
+car::qqPlot(games_win$FG3_PCT) # normal
+shapiro.test(sample(games_win$AST, 5000)) # não normal
+car::qqPlot(games_win$AST) # normal
+shapiro.test(sample(games_win$REB, 5000)) # não normal
+car::qqPlot(games_win$REB) # normal
+
+```
+
+Teste de normalidade da tabela de derrotas
+
+```{r}
+shapiro.test(sample(games_lost$FG_PCT, 5000)) # normal
+car::qqPlot(games_lost$FG_PCT) # normal
+shapiro.test(sample(games_lost$FT_PCT, 5000)) # normal
+car::qqPlot(games_lost$FT_PCT) # normal
+shapiro.test(sample(games_lost$FG3_PCT, 5000)) # não normal
+car::qqPlot(games_lost$FG3_PCT) # normal
+shapiro.test(sample(games_lost$AST, 5000)) # não normal
+car::qqPlot(games_lost$AST) # normal
+shapiro.test(sample(games_lost$REB, 5000)) # não normal
+car::qqPlot(games_lost$REB) # normal
+
+```
+
+Todas as variáveis testadas não possuem uma distribuição normal de acordo com o Shapiro-Wilk normality test, entretando, considerando a quantidade de variáveis e o gráfico de qqPlot, as variáveis apresentam uma distribição.
+
+### Teste entre as duas populações
+
+```{r}
+
+# Teste T Pareado
+t.test(games_win$FG_PCT,games_lost$FG_PCT, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(games_win$FT_PCT,games_lost$FT_PCT, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(games_win$FG3_PCT,games_lost$FG3_PCT, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(games_win$AST,games_lost$AST, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(games_win$REB,games_lost$REB, alternative='two.sided', conf.level=.95, paried=T)
+
+```
+
+
+### Testando a correlação entre duas variáveis
+
+```{r}
+cor.test(games_win$FG_PCT, games_win$FT_PCT,
+        method = "pearson",
+        conf.level=0.95)
+```
+
+rho=1, indica correlação perfeita positiva entre as duas variáveis.
+
+rho=−1, indica correlação negativa perfeita entre as duas variáveis.
+
+rho=0, indica que não há correlação entre as duas variáveis.
+
+p=valor < 5%. As variáveis de interesse são estatisticamente correlacionadas ao nível de significância de 5%.
+
+### Matriz de Correlação
+
+```{r}
+#Coeficiente de Correlação
+games_win_cor <- select(games_win, FG_PCT, FT_PCT, FG3_PCT, AST, REB)
+rmat<-rcorr(as.matrix(games_win_cor), type = c("pearson"))
+
+#p-valor
+p.mat <- cor_pmat(games_win_cor,
+                  method = "pearson",
+                  alternative = "two.sided",
+                  conf.level = 0.95)
+
+knitr::kable(rmat$r, caption= "Tabela de Coeficiente de Correlação de pearson")
+
+knitr::kable(p.mat, caption= "Tabela de p-valor")
+```
+
+
+### Gráfico Matriz de Correlação
+
+```{r}
+ggcorrplot::ggcorrplot(rmat$r, #matriz dos coeficientes de correlação
+                       lab = TRUE, # plota os números
+                       lab_size = 3, # regula o tamanho do número
+                       title = "Matriz de correlação de Pearson", 
+                       digits = 2, #casas depois da vírgula
+                       p.mat = p.mat 
+                       )
+
+ggcorrplot::ggcorrplot(p.mat, #matriz dos p-valor
+                       lab = TRUE, # plota os números
+                       lab_size = 3, # regula o tamanho do número
+                       title = "Matriz de p-valor correlação de Pearman", 
+                       digits = 3, #casas depois da vírgula
+                       p.mat = p.mat,  #mostra o que não tem correlação significativa com X bem grande
+                       #insig = "blank",  #deixa branco o que não tem correlação significativa
+                       ) 
+```
+
+### Comparação entre os jogos mais acirrados
+
+```{r}
+
+tough_games <- games %>%
+  filter(abs(PTS_home - PTS_away) < 4)
+
+
+tough_games_win <- tough_games %>%
+    mutate(
+        TEAM_ID=if_else(HOME_TEAM_WINS == 1, TEAM_ID_home, TEAM_ID_away),
+        FG_PCT=if_else(HOME_TEAM_WINS == 1, FG_PCT_home, FG_PCT_away),
+        FT_PCT=if_else(HOME_TEAM_WINS == 1, FT_PCT_home, FT_PCT_away),
+        FG3_PCT=if_else(HOME_TEAM_WINS == 1, FG3_PCT_home, FG3_PCT_away),
+        AST=if_else(HOME_TEAM_WINS == 1, AST_home, AST_away),
+        REB=if_else(HOME_TEAM_WINS == 1, REB_home, REB_away),
+        HOME_WIN=factor(HOME_TEAM_WINS)
+        
+    ) %>%
+    select(GAME_ID, TEAM_ID, FG_PCT, FT_PCT, FG3_PCT, AST, REB, HOME_WIN) #%>%
+    #inner_join(games_details, by = c("GAME_ID" = "GAME_ID", "TEAM_ID" = "TEAM_ID"))
+
+tough_games_lost <- tough_games %>%
+    mutate(
+        TEAM_ID=if_else(HOME_TEAM_WINS == 0, TEAM_ID_home, TEAM_ID_away),
+        FG_PCT=if_else(HOME_TEAM_WINS == 0, FG_PCT_home, FG_PCT_away),
+        FT_PCT=if_else(HOME_TEAM_WINS == 0, FT_PCT_home, FT_PCT_away),
+        FG3_PCT=if_else(HOME_TEAM_WINS == 0, FG3_PCT_home, FG3_PCT_away),
+        AST=if_else(HOME_TEAM_WINS == 0, AST_home, AST_away),
+        REB=if_else(HOME_TEAM_WINS == 0, REB_home, REB_away),
+        HOME_WIN=factor(HOME_TEAM_WINS)
+        
+    ) %>%
+    select(GAME_ID, TEAM_ID, FG_PCT, FT_PCT, FG3_PCT, AST, REB, HOME_WIN)
+
+
+glimpse(tough_games_win)
+glimpse(tough_games_lost)
+
+summarytools::freq(tough_games_win$HOME_WIN)
+summary(tough_games_win)
+summary(tough_games_lost)
+
+shapiro.test(tough_games_win$FG_PCT)
+car::qqPlot(tough_games_win$FG_PCT) # normal
+
+
+# Teste T Pareado
+t.test(tough_games_win$FG_PCT,tough_games_lost$FG_PCT, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(tough_games_win$FT_PCT,tough_games_lost$FT_PCT, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(tough_games_win$FG3_PCT,tough_games_lost$FG3_PCT, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(tough_games_win$AST,tough_games_lost$AST, alternative='two.sided', conf.level=.95, paried=T)
+
+t.test(tough_games_win$REB,tough_games_lost$REB, alternative='two.sided', conf.level=.95, paried=T)
+
+
+```
+
